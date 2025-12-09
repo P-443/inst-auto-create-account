@@ -16,12 +16,27 @@ function getRandomInt(min, max) {
 }
 
 async function launchBrowserWithOptionalProxy(proxy = null) {
-    const launchOptions = { headless: false }; // Set to true for headless mode
+    const args = [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--no-zygote",
+        "--disable-features=site-per-process"
+    ];
+
     if (proxy) {
-        launchOptions.args = [`--proxy-server=${proxy}`];
+        args.push(`--proxy-server=${proxy}`);
     }
+
+    const launchOptions = {
+        headless: "new", // خليه false لو عايز تشوف المتصفح
+        args: args
+    };
+
     return puppeteer.launch(launchOptions);
 }
+
 
 (async function fakeInstagramAccount() {
     const proxy = process.argv[2] || null; // Pass proxy as an argument when running the script
@@ -49,18 +64,9 @@ async function launchBrowserWithOptionalProxy(proxy = null) {
         await page.type('input[name="username"]', username);
         await page.type('input[name="password"]', randomPassword);
 
-        // Click the sign-up button
-        const signUpClicked = await page.evaluate(() => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const signUpButton = buttons.find(btn => btn.textContent.trim() === 'Sign up');
-            if (signUpButton) {
-                signUpButton.click();
-                return true;
-            }
-            return false;
-        });
-
-        if (!signUpClicked) throw new Error("Sign-up button not found.");
+        // Click the sign-up button ✅
+        await page.waitForSelector('button[type="submit"]', { timeout: 10000 });
+        await page.click('button[type="submit"]');
         await sleep(5000);
 
         // Select date of birth
